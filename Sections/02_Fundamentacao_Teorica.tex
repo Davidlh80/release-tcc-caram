@@ -1,8 +1,6 @@
 \section{Fundamentação Teórica}
 \label{sec:fundamentacao}
 
-Esta seção apresenta os conceitos de \textit{DevOps}, Infraestrutura como Código, Inteligência Artificial generativa e pipelines de \textit{CI/CD} que sustentam a geração, a validação e a comparação dos artefatos avaliados neste trabalho.
-
 \subsection{\textit{DevOps} e Infraestrutura como Código}
 
 \textit{DevOps} integra desenvolvimento e operações para aumentar a velocidade e a confiabilidade das entregas. Para Kim et al. \cite{kim2016devops}, essa cultura se sustenta nos Três Caminhos (\textit{The Three Ways}): fluxo de trabalho, ciclos de \textit{feedback} e aprendizado contínuo.
@@ -13,7 +11,7 @@ A Infraestrutura como Código (\textit{IaC}) leva esse princípio à infraestrut
 
 \textit{Large Language Models} (\textit{LLMs}) são modelos baseados na arquitetura \textit{Transformer} \cite{vaswani2017attention}, capazes de transformar descrições em linguagem natural em código, ainda que sem garantia de precisão \cite{chen2021codex}. Neste trabalho, essa capacidade é usada para gerar arquivos Terraform a partir de requisitos funcionais, e a saída depende do \textit{prompt} e das informações fornecidas, como padrões de nomenclatura, requisitos de segurança e restrições de implementação, que variam entre organizações.
 
-Dois riscos motivam a validação adotada neste experimento. Primeiro, os LLMs podem alucinar, ou seja, produzir informações incorretas de forma aparentemente plausível \cite{ji2023hallucination}. Na geração de código, isso pode resultar em propriedades inexistentes ou atendimento apenas parcial aos requisitos, e diferentes execuções da mesma solicitação podem produzir respostas distintas. Segundo, uma resposta sintaticamente correta não é necessariamente segura: Pearce et al. \cite{pearce2022copilot} identificaram vulnerabilidades em código produzido com apoio de modelos generativos, e em IaC isso pode significar permissões excessivas ou exposição pública sem que o \textit{template} deixe de ser válido. Por isso, neste trabalho, os artefatos gerados sem e com contexto organizacional são submetidos às mesmas verificações aplicadas aos \textit{templates} manuais.
+Dois riscos motivam a validação adotada neste experimento. Primeiro, os LLMs podem alucinar, ou seja, produzir informações incorretas de forma aparentemente plausível \cite{ji2023hallucination}. Na geração de código, isso pode resultar em propriedades inexistentes ou atendimento apenas parcial aos requisitos. Segundo, uma resposta sintaticamente correta não é necessariamente segura: Pearce et al. \cite{pearce2022copilot} identificaram vulnerabilidades em código produzido com apoio de modelos generativos, e em IaC isso pode significar permissões excessivas ou exposição pública sem que o \textit{template} deixe de ser válido. Por isso, neste trabalho, os artefatos gerados sem e com contexto organizacional são submetidos às mesmas verificações aplicadas aos \textit{templates} manuais.
 
 \subsection{Pipelines de Integração e Entrega Contínua}
 
