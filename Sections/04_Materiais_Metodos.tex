@@ -1,0 +1,89 @@
+\section{Materiais e Métodos}
+\label{sec:metodologia}
+
+Esta pesquisa é de natureza aplicada, com caráter exploratório e descritivo, e adota abordagem predominantemente quantitativa, complementada pela análise qualitativa dos problemas identificados, combinação adequada para comparar, de forma objetiva, tratamentos cujos efeitos ainda não são bem compreendidos na literatura. Do ponto de vista dos procedimentos técnicos, consiste em uma avaliação experimental comparativa, na qual diferentes métodos de geração de \textit{templates} são submetidos à mesma infraestrutura de validação, o que permite comparar os resultados entre os métodos, embora fatores externos ao método de geração, discutidos na Seção~\ref{sec:ameacas}, também possam influenciar parte dos resultados.
+
+A Figura~\ref{fig:fluxo_experimental} apresenta as principais etapas do experimento: definição dos recursos e requisitos, produção dos \textit{templates} nos cenários manual, IA sem contexto organizacional e IA com contexto organizacional, submissão ao mesmo \textit{pipeline} de validação automatizada (validação Terraform, execução funcional com LocalStack, validação de segurança e métricas operacionais) e consolidação dos resultados para comparação.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.88\textwidth]{diagrama-metodologia.png}
+\caption{Fluxo experimental para geração, validação e avaliação de \textit{templates} de Infraestrutura como Código. Fonte: elaborado pelo autor.}
+\label{fig:fluxo_experimental}
+\end{figure}
+
+\subsection{Ambiente Experimental}
+
+Os artefatos foram desenvolvidos em Terraform, ferramenta de \textit{IaC} \textit{open source} amplamente adotada e compatível com múltiplos provedores de nuvem, e versionados no GitHub, onde \textit{workflows} em GitHub Actions executam formatação, validação, conformidade e segurança (Checkov e Trivy, ferramentas \textit{open source} consolidadas de análise estática) e execução funcional com LocalStack, escolhido por permitir criar, consultar e remover os recursos sem o custo e o risco de uma conta real da AWS. Programas auxiliares em Go e \textit{Shell} apoiam a geração dos artefatos de IA, a organização dos dados e a condução dos testes funcionais.
+
+A geração automatizada foi realizada pelo Claude Code, executado em modo não interativo a partir de um programa em Go, com um único modelo e os mesmos parâmetros em todas as execuções. Os \textit{prompts} base permaneceram inalterados durante a coleta, e a única diferença entre os cenários automatizados é a inclusão ou ausência do contexto organizacional. O modelo, a data das execuções e os arquivos de entrada foram registrados, e as respostas foram armazenadas individualmente no repositório, o que aumenta a rastreabilidade do experimento, ainda que o modelo esteja identificado apenas pelo nome da variante (Claude Sonnet), sem o número exato da versão.
+
+Os \textit{prompts} seguem os elementos Papel, Contexto, Ação, Formato de Saída e Restrições e Avisos. O \textit{prompt} sem contexto omite apenas o contexto organizacional em relação ao prompt com contexto, para não induzir uma divergência artificial entre os dois cenários automatizados.
+
+\subsection{Estratégia de Amostragem}
+
+Foram avaliados \textit{templates} referentes a Amazon S3, AWS IAM e Security Group, escolhidos por representarem armazenamento, gerenciamento de identidades e controle de acesso em rede.
+
+Foram recrutados 20 participantes entre estudantes e profissionais de tecnologia, sem exigência de experiência prévia em Terraform ou \textit{IaC}. O tamanho da amostra manual foi limitado pela dificuldade de recrutar voluntários que concluíssem integralmente a atividade durante o período de coleta, discutida na Seção~\ref{sec:ameacas}. Um formulário de caracterização registrou vínculo acadêmico ou profissional, experiência prévia com nuvem, \textit{IaC} e Terraform, e familiaridade com os serviços avaliados, para descrever o perfil da amostra e auxiliar na interpretação de diferenças de desempenho. Um formulário de registro de atividade, respondido ao final da tarefa, registrou horário de início e término, pausas, dificuldade percebida e eventuais dúvidas sobre os requisitos. Foram incluídos participantes que concluíram integralmente as atividades e forneceram os registros necessários de tempo e submissão.
+
+Cada participante produziu manualmente um \textit{template} por recurso, totalizando 60 artefatos manuais. Para os cenários de IA, cada recurso foi gerado 30 vezes sem contexto e 30 vezes com contexto, totalizando 180 \textit{templates} automatizados. Ao todo, este trabalho avalia 240 \textit{templates}: 180 automatizados e 60 manuais, todos com a mesma especificação funcional, para preservar condições equivalentes de comparação.
+
+\subsection{Contexto Organizacional}
+
+O contexto organizacional foi definido a partir de diretrizes elaboradas para o experimento: padrões de nomenclatura, \textit{tags} obrigatórias com chaves específicas, nomenclatura fixa de variáveis e \textit{outputs}, estrutura obrigatória do README, e versões mais específicas dos requisitos mínimos de segurança já exigidos na linha de base dos três cenários: por exemplo, as quatro \textit{flags} do \textit{Public Access Block} no S3 em vez de apenas ``bloquear acesso público'', ou a proibição de \texttt{0.0.0.0/0} fora da porta 443/tcp no Security Group em vez de apenas ``evitar abertura irrestrita''.
+
+Essas regras representam práticas comuns em organizações que adotam \textit{IaC}, mas que não fazem parte da descrição funcional de um recurso. O objetivo é verificar se tornar essas práticas mais específicas, somadas às convenções de nomenclatura e documentação, influencia a conformidade, a padronização e a segurança dos artefatos gerados. Todo o material está armazenado no repositório e permanece inalterado durante a coleta, variando apenas sua presença entre os dois cenários automatizados.
+
+\subsection{Desenvolvimento do Ambiente Experimental}
+
+\subsubsection{Organização do Repositório}
+
+O ambiente foi implementado no repositório público disponível em \url{https://github.com/Davidlh80/tcc}, permitindo que participantes externos acessem os requisitos e submetam os \textit{templates} manuais por \textit{Pull Request}, na mesma esteira de validação usada nos cenários de IA. O repositório centraliza requisitos, \textit{prompts}, contexto organizacional, código Terraform, scripts, pipelines e resultados, com os documentos de entrada mantidos separados dos artefatos gerados, de modo a evitar que informações exclusivas do cenário com contexto fossem usadas no cenário sem contexto.
+
+Os \textit{templates} foram organizados nos diretórios \texttt{manual}, \texttt{ia-sem-contexto} e \texttt{ia-com-contexto}. No cenário manual, cada participante recebeu um identificador entre \texttt{p01} e \texttt{p30}, usado apenas para organizar as submissões durante o \textit{merge} para a \textit{branch} principal. Nos automatizados, cada geração recebe um identificador entre \texttt{exec-01} e \texttt{exec-30}, cada um com diretórios próprios para S3, IAM e Security Group, contendo \texttt{main.tf}, \texttt{variables.tf}, \texttt{outputs.tf}, \texttt{versions.tf} e \texttt{README.md}. Nos cenários de IA, o programa também cria um \texttt{metadata.yml} com cenário, execução, recurso, modelo e arquivos de entrada, para verificar automaticamente a presença dos componentes esperados e rastrear a origem dos artefatos.
+
+\subsubsection{Preparação da Atividade Manual e Geração por IA}
+
+Cada participante recebeu um identificador, acesso ao repositório, uma \textit{branch} \texttt{manual/pXX} e os requisitos gerais e específicos, devendo alterar somente os três diretórios associados ao seu identificador. Os requisitos descrevem o comportamento esperado: bloqueio de acesso público, criptografia, versionamento e \textit{tags} no S3, uma \textit{policy} de menor privilégio anexada a uma \textit{role} com \textit{trust policy} restrita no IAM, e regras explícitas de entrada e saída no Security Group. Eles não forneceram, porém, implementação pronta, e o participante não recebeu credenciais AWS. Início, término, pausas, dificuldade percebida e experiência prévia foram registrados em formulário, e a primeira submissão foi considerada definitiva.
+
+Para os dois cenários de IA, um programa em Go lê os arquivos de entrada, invoca o Claude Code em modo não interativo e armazena a resposta no diretório correspondente. As até três tentativas automáticas previstas pelo programa cobrem apenas falhas técnicas da chamada em si, como \textit{timeout} ou erro de processo, e não avaliam o conteúdo da resposta. No cenário sem contexto, a entrada contém somente o \textit{prompt} do recurso. Com contexto, o programa acrescenta o documento de padrões organizacionais ao mesmo requisito técnico, mantendo o mesmo modelo nos dois casos. Foram realizadas 30 execuções dos três recursos em cada cenário (90 \textit{templates} sem contexto, 90 com contexto), e se algum dos cinco arquivos previstos não for identificado na resposta recebida, a execução é registrada como falha, sem nova tentativa e sem correção manual dos artefatos em nenhum dos três cenários antes da avaliação.
+
+\subsubsection{Submissão e Fluxo dos Pipelines}
+
+Nos três cenários, os artefatos são submetidos ao mesmo repositório e passam pelos mesmos quatro \textit{workflows} do GitHub Actions, acionados por alteração nos arquivos Terraform, por \textit{Pull Request} ou manualmente, com exceção do \texttt{localstack.yml}, executado apenas sob demanda. Para preservar a equivalência, é considerada para avaliação a primeira versão completa submetida, sem correções posteriores: o retorno dos pipelines funciona como instrumento de avaliação, não como mecanismo de aperfeiçoamento de apenas um dos métodos. A Tabela~\ref{tab:workflows} resume as etapas e a saída de cada \textit{workflow}.
+
+\begin{table}[H]
+\centering
+\caption{Workflows de validação automatizada. Fonte: elaborado pelo autor.}
+\label{tab:workflows}
+\small
+\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{2.8cm}|>{\raggedright\arraybackslash}X|>{\raggedright\arraybackslash}p{2.1cm}}
+\hline
+\textbf{Workflow} & \textbf{Etapas} & \textbf{Saída} \\
+\hline
+\texttt{terraform-}\\\texttt{validate.yml} & \texttt{fmt -check}, \texttt{init} (sem \textit{backend}), \texttt{validate} & CSV, JSON e MD \\
+\hline
+\texttt{security-}\\\texttt{scan.yml} & Checkov e Trivy, em paralelo e sem bloquear o \textit{workflow} & JSON \\
+\hline
+\texttt{metrics.yml} & inventário dos arquivos esperados por \textit{template} & JSON e CSV \\
+\hline
+\texttt{localstack}\\\texttt{.yml} & \texttt{init}, \texttt{plan}, \texttt{apply}, verificação do recurso, \texttt{destroy} (até 3 lotes em paralelo) & CSV e \textit{logs} \\
+\hline
+\end{tabularx}
+\end{table}
+
+No \texttt{security-scan.yml}, os achados do Checkov e do Trivy são os próprios dados da pesquisa e por isso não interrompem o \textit{workflow}: uma execução concluída indica apenas que a análise foi realizada, não que o \textit{template} está livre de problemas. No \texttt{localstack.yml}, cada lote sobe um contêiner com suporte a S3, IAM, EC2 e STS, e o script \texttt{run-localstack-tests.sh} executa \texttt{init}, \texttt{plan} e \texttt{apply}, consulta via AWS CLI o recurso criado e então o remove (\texttt{destroy}). Cada etapa é registrada separadamente em CSV, e uma falha não interrompe o restante das execuções.
+
+\subsection{Variáveis, Coleta e Métricas}
+
+A variável independente corresponde ao método de geração do \textit{template}: manual, IA sem contexto ou IA com contexto organizacional. As variáveis dependentes, isto é, tempo de desenvolvimento, percentual de conformidade, quantidade e severidade de problemas de segurança, falhas nas validações automatizadas e taxa de sucesso de execução, correspondem diretamente aos três objetivos específicos da pesquisa (esforço, conformidade e segurança), respondendo a cada um com uma métrica própria.
+
+Os principais instrumentos de coleta são o formulário de caracterização dos participantes, os relatórios dos \textit{workflows} de CI/CD e os arquivos \texttt{metadata.yml} do programa de geração. Nas atividades manuais, cada participante registrou em formulário horário de início e término, pausas, dificuldade percebida e experiência prévia, com os registros do GitHub como apoio de auditoria. Nas gerações por IA, o programa registrou os instantes de início e término e o tempo total para disponibilizar os arquivos, considerado na comparação principal porque representa o intervalo até o artefato estar pronto para submissão.
+
+A qualidade técnica foi avaliada pelos resultados de \texttt{terraform fmt}, \texttt{init}, \texttt{validate} e pela execução funcional com LocalStack, observando separadamente \texttt{plan}, \texttt{apply}, verificação do recurso e \texttt{destroy}. Checkov e Trivy forneceram os achados de segurança, incluindo a severidade das configurações inseguras. O percentual de conformidade corresponde à razão entre as verificações do Checkov aprovadas e o total de verificações aplicáveis, agregadas por recurso e cenário, e a padronização foi avaliada pelo inventário do \texttt{metrics.yml}, que verifica a presença dos arquivos esperados em cada \textit{template}. A taxa de sucesso funcional corresponde à proporção de artefatos que concluíram todas as etapas do LocalStack, permitindo identificar em qual etapa cada falha ocorreu.
+
+\subsection{Análise dos Resultados}
+
+Os dados foram analisados por estatística descritiva (médias, medianas e frequências absolutas e relativas), uma vez que o interesse está em comparar diretamente as proporções obtidas por cada tratamento, sem assumir que os dados sigam alguma distribuição estatística específica (como a distribuição normal).
+
+Essa análise quantitativa foi complementada pelo exame qualitativo dos principais problemas encontrados nos artefatos, especialmente quando uma mesma categoria de falha se repetiu em determinado cenário. Essa combinação permite discutir não apenas a quantidade de problemas, mas também sua natureza e seu possível impacto sobre a adoção de IA na geração de Infraestrutura como Código.

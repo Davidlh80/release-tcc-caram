@@ -1,0 +1,127 @@
+\section{Resultados}
+\label{sec:resultados}
+
+Esta seção apresenta os resultados dos três cenários avaliados. Todos os dados provêm de uma única execução de referência dos \textit{workflows} descritos na Seção~\ref{sec:metodologia}, realizada sobre a \textit{branch} principal do repositório, com Terraform 1.9.8, \textit{provider} AWS 5.100.0 na configuração padrão (exceto três \textit{templates} manuais executados com a versão 6.68.0, conforme discutido na Seção~\ref{sec:ameacas}), Checkov 3.4.0 e Trivy 0.70.0. Foram avaliados os 180 \textit{templates} automatizados (30 execuções dos três recursos em cada cenário de IA) e os 60 \textit{templates} submetidos pelos 20 participantes do cenário manual (identificadores \texttt{p01} a \texttt{p30}). O experimento compreende, portanto, 240 \textit{templates}.
+
+\subsection{Eficiência Operacional}
+
+A Tabela~\ref{tab:tempo} apresenta o tempo total de geração automatizada (do início da chamada ao Claude Code até a resposta completa), em segundos, registrado no campo \texttt{total\_duration\_ms} dos arquivos \texttt{metadata.yml} das 180 execuções automatizadas, e o tempo líquido de desenvolvimento manual, em minutos, registrado pelos 20 participantes no formulário de registro de atividade (horário de início e término, descontadas as pausas declaradas). Para cada identificador de execução, os tempos dos três recursos (S3, IAM e Security Group) foram agregados em uma única observação, produzindo 30 observações por cenário de IA e 20 observações no cenário manual.
+
+\begin{table}[H]
+\centering
+\caption{Tempo de produção do conjunto dos três \textit{templates} (S3, IAM e Security Group), por cenário. Fonte: elaborado pelo autor.}
+\label{tab:tempo}
+\small
+\begin{tabular}{l|c|c}
+\hline
+\textbf{Cenário} & \textbf{Média} & \textbf{Mediana} \\
+\hline
+Manual (n=20, minutos) & 77,5 min & 80,0 min \\
+IA sem contexto (n=30, segundos) & 160,8 s (2,7 min) & 150,0 s \\
+IA com contexto (n=30, segundos) & 195,9 s (3,3 min) & 208,5 s \\
+\hline
+\end{tabular}
+\end{table}
+
+A geração automatizada do conjunto dos três \textit{templates} leva em média 2,7 minutos sem contexto organizacional e 3,3 minutos com contexto, contra 77,5 minutos de desenvolvimento manual líquido, excluídas as pausas declaradas. O formulário de registro de atividade também perguntou a cada participante a dificuldade percebida, em uma escala de 1 (muito fácil) a 5 (muito difícil), e se houve dúvidas sobre os requisitos apresentados. A dificuldade média declarada foi 3,4, e 9 dos 20 participantes (45,0\%) relataram dúvidas. Essas duas medidas não se concentram nos participantes cujos \textit{templates} reprovaram mais etapas da execução funcional, discutida na Seção~\ref{subsec:localstack}: dos 3 participantes com o pior resultado funcional (aprovação em apenas 1 dos 3 recursos), todos relataram dificuldade entre 3 e 4 e nenhum relatou dúvidas, valores próximos da média geral da amostra.
+
+\subsection{Completude e Padronização dos Artefatos}
+
+O \textit{workflow} \texttt{metrics.yml} inventariou os 240 \textit{templates} avaliados, verificando a presença dos arquivos esperados. Os quatro arquivos Terraform (\texttt{main.tf}, \texttt{variables.tf}, \texttt{outputs.tf} e \texttt{versions.tf}) estavam presentes nos 180 \textit{templates} automatizados e nos 60 \textit{templates} manuais (100\%).
+
+O \texttt{README.md} esteve presente nos 180 \textit{templates} automatizados e em 42 dos 60 \textit{templates} manuais (70,0\%, 14 dos 20 participantes com documentação nos três recursos), embora a documentação constasse dos requisitos gerais fornecidos aos participantes. 
+
+\subsection{Validação Sintática e Estrutural}
+
+A Tabela~\ref{tab:terraform-validate} apresenta a taxa de aprovação em cada etapa do \textit{workflow} \texttt{terraform-validate.yml}. O cenário manual apresenta a maior aprovação geral (93,3\%, 56 de 60), seguido pelo cenário com contexto (88,9\%, 80 de 90) e pelo cenário sem contexto (62,2\%, 56 de 90).
+
+\begin{table}[H]
+\centering
+\caption{Resultado do \texttt{terraform-validate} por cenário e etapa. Fonte: elaborado pelo autor.}
+\label{tab:terraform-validate}
+\small
+\begin{tabular}{l|c|c|c|c}
+\hline
+\textbf{Cenário} & \textbf{fmt} & \textbf{init} & \textbf{validate*} & \textbf{Geral} \\
+\hline
+Manual (n=60) & 56/60 (93,3\%) & 60/60 (100\%) & 60/60 (100\%) & 56/60 (93,3\%) \\
+IA sem contexto (n=90) & 69/90 (76,7\%) & 89/90 (98,9\%) & 76/89 (85,4\%) & 56/90 (62,2\%) \\
+IA com contexto (n=90) & 82/90 (91,1\%) & 88/90 (97,8\%) & 88/88 (100\%) & 80/90 (88,9\%) \\
+\hline
+\end{tabular}
+\vspace{2pt}
+\footnotesize{*A coluna \texttt{validate} considera apenas os \textit{templates} que passaram pela etapa \texttt{init}, uma vez que a falha nessa etapa impede a execução da validação subsequente.}
+\end{table}
+
+As diferenças entre os cenários automatizados se concentram nas etapas de formatação (\texttt{fmt}) e de verificação de código (\texttt{validate}), enquanto a etapa de inicialização (\texttt{init}) aprova quase todos os \textit{templates} nos três cenários (detalhamento por recurso no Apêndice~\ref{apx:validacao}). No cenário sem contexto, a maior parte das reprovações vem de divergências simples de formatação (21 dos 90 \textit{templates}, 14 delas no IAM) e de um grupo menor de erros de escrita do código, como referência a uma variável inexistente, um trecho mal formado ao expor o algoritmo de criptografia do S3 e um valor inválido dentro de uma declaração repetida na política de confiança do IAM. No cenário com contexto, essas falhas praticamente desaparecem (8,9\% em \texttt{fmt} e nenhuma em \texttt{validate}), e as duas únicas reprovações de inicialização decorrem do mesmo provedor declarado duas vezes no mesmo arquivo. No cenário manual, as quatro reprovações são exclusivamente de formatação, sem nenhum erro de inicialização ou de verificação de código. Como uma divergência apenas de formatação já reprova o \textit{template} na coluna Geral, parte da diferença entre os cenários é de forma, e não de conteúdo. Desconsiderando essa etapa, a aprovação seria de 84,4\% (76/90) sem contexto, 97,8\% (88/90) com contexto e 100\% (60/60) no manual.
+
+\subsection{Execução Funcional com LocalStack}
+\label{subsec:localstack}
+
+A Tabela~\ref{tab:localstack} apresenta a taxa de sucesso da execução funcional (\texttt{init}, \texttt{plan}, \texttt{apply}, verificação e \texttt{destroy}) no \textit{workflow} \texttt{localstack.yml}, por recurso e cenário.
+
+\begin{table}[H]
+\centering
+\caption{Resultado do teste funcional com LocalStack por recurso e cenário. Fonte: elaborado pelo autor.}
+\label{tab:localstack}
+\small
+\begin{tabular}{l|c|c|c}
+\hline
+\textbf{Recurso} & \textbf{Manual (n=20)} & \textbf{IA sem contexto (n=30)} & \textbf{IA com contexto (n=30)} \\
+\hline
+Amazon S3 & 12/20 (60,0\%) & 26/30 (86,7\%) & 29/30 (96,7\%) \\
+AWS IAM & 19/20 (95,0\%) & 27/30 (90,0\%) & 30/30 (100\%) \\
+Security Group & 16/20 (80,0\%) & 29/30 (96,7\%) & 27/30 (90,0\%) \\
+\hline
+Geral & 47/60 (78,3\%) & 82/90 (91,1\%) & 86/90 (95,6\%) \\
+\hline
+\end{tabular}
+\end{table}
+
+As 25 falhas foram classificadas pela mensagem de erro registrada nos \textit{logs} de cada etapa, com detalhamento no Apêndice~\ref{apx:localstack}. A maior parte das reprovações no cenário manual tem origem no próprio ambiente de teste, e não em um defeito do \textit{template}. A causa mais comum é uma operação que o \textit{provider} da AWS tenta executar sobre o recurso recém-criado, como consultar as \textit{tags} do \textit{bucket} ou gerar uma chave de criptografia, e que o LocalStack não oferece, responsável por 8 das 13 reprovações manuais de S3. As demais falhas manuais decorrem de uma variável obrigatória sem valor no IAM e, no Security Group, de descrições de regra escritas com acentuação (rejeitadas pela AWS) e de uma rotina de verificação que não reconhece o identificador do recurso criado por usar um nome ou formato diferente do esperado. Classificando essas causas entre o que é atribuível ao ambiente de execução e o que é atribuível ao conteúdo do \textit{template} (Apêndice~\ref{apx:localstack}), 11 das 13 falhas manuais (84,6\%) vêm do ambiente, e apenas 2 (15,4\%) refletem um defeito do próprio \textit{template}.
+
+Cruzando o resultado funcional de cada participante manual com o formulário de caracterização, a relação com a experiência prévia em IaC é fraca nesta amostra. Dos participantes que já haviam utilizado alguma ferramenta de IaC antes do experimento, metade aprovou os três recursos, contra 40\% entre os que nunca haviam utilizado nenhuma. Os três participantes com o pior resultado (aprovação em apenas 1 dos 3 recursos) incluem dois sem nenhuma experiência prévia e um com conhecimento intermediário declarado e uso frequente de ferramentas de IA, e todos reprovam pelas mesmas causas ambientais listadas acima, não por um erro de conteúdo específico do \textit{template}.
+
+Nos cenários de IA, as poucas falhas vêm mais de erros de escrita do código do que de limitações do ambiente. No cenário sem contexto, dois \textit{templates} erram a sintaxe de uma referência (no S3 e no IAM) e um terceiro declara um recurso experimental no Security Group. No cenário com contexto, as quatro falhas se dividem entre um recurso experimental, o mesmo provedor declarado duas vezes e dois \textit{templates} de Security Group cuja regra de validação da variável de nome rejeita o valor que o ambiente de execução fornece.
+
+\subsection{Análise de Segurança}
+
+Os \textit{templates} dos três cenários foram submetidos ao \textit{workflow} \texttt{security-scan.yml}, que executa Checkov e Trivy de forma independente sobre os arquivos Terraform. Como os achados dessas ferramentas compõem os próprios dados da pesquisa, o \textit{workflow} não interrompe a execução ao encontrá-los: uma execução concluída indica apenas que a análise foi realizada, não que os \textit{templates} estão livres de problemas.
+
+\subsubsection{Configurações Inseguras (Trivy)}
+
+A Tabela~\ref{tab:trivy} apresenta a proporção de \textit{templates} com pelo menos um achado do Trivy, por recurso, severidade e cenário.
+
+\begin{table}[H]
+\centering
+\caption{Resultado da análise de configurações inseguras com Trivy, por recurso, severidade e cenário. Fonte: elaborado pelo autor.}
+\label{tab:trivy}
+\begin{tabular}{l|l|c|c|c}
+\hline
+\textbf{Recurso} & \textbf{Severidade} & \textbf{Manual} & \textbf{IA sem contexto} & \textbf{IA com contexto} \\
+\hline
+Amazon S3 & Baixa & 20/20 (100\%) & 30/30 (100\%) & 30/30 (100\%) \\
+Amazon S3 & Média & 1/20 (5,0\%) & 0/30 (0,0\%) & 0/30 (0,0\%) \\
+Amazon S3 & Alta & 17/20 (85,0\%) & 0/30 (0,0\%) & 21/30 (70,0\%) \\
+\hline
+Security Group & Baixa & 1/20 (5,0\%) & 0/30 (0,0\%) & 1/30 (3,3\%) \\
+Security Group & Crítica & 9/20 (45,0\%) & 28/30 (93,3\%) & 8/30 (26,7\%) \\
+\hline
+AWS IAM & --- & 0/20 (0,0\%) & 0/30 (0,0\%) & 0/30 (0,0\%) \\
+\hline
+\end{tabular}
+\vspace{2pt}
+\footnotesize{AWS IAM não apresenta achados de nenhuma severidade em nenhum dos três cenários.}
+\end{table}
+
+O achado mais relevante é uma regra de severidade crítica que sinaliza quando o Security Group libera a porta de saída para qualquer endereço da internet, presente em 28 de 30 \textit{templates} (93,3\%) sem contexto, ainda que o \textit{prompt} desse cenário pedisse regras de saída explícitas, evitando abertura irrestrita desnecessária. No cenário com contexto, cuja regra organizacional proíbe esse endereço fora da porta 443/tcp, a incidência cai para 26,7\%, patamar próximo ao do manual (45,0\%, 9 de 20). Um achado de severidade baixa relativo à ausência de descrição da regra ocorre em um \textit{template} manual e em um com contexto.
+
+No S3, os três cenários apresentam, em praticamente todos os \textit{templates}, um achado de severidade baixa relativo à ausência de registro de acesso, controle que não consta dos requisitos de nenhum dos grupos. Um achado de severidade alta relativo à ausência de chave de criptografia gerenciada pelo cliente ocorre em 17 de 20 \textit{templates} manuais e em 21 de 30 com contexto, mas em nenhum sem contexto. Os \textit{templates} sem contexto deixam essa chave como uma opção configurável por variável, usando a criptografia padrão da AWS quando nenhuma é informada, o que a análise estática do Trivy não sinaliza, enquanto o contexto organizacional estabelece essa criptografia padrão como exigência e a maioria dos participantes manuais adota a mesma escolha. Um único achado de severidade média, relativo à ausência de versionamento, ocorre em um \textit{template} manual.
+
+\subsubsection{Conformidade com Boas Práticas (Checkov)}
+
+O Checkov avaliou 4.559 verificações sobre os 240 \textit{templates}, sendo 1.183 no cenário manual, 1.585 no cenário sem contexto e 1.791 no cenário com contexto. A aprovação geral foi de 89,3\% no manual, 89,6\% sem contexto e 89,9\% com contexto, valores muito próximos entre si.
+
+Essa proximidade decorre da distribuição dos achados por recurso (Tabelas~\ref{tab:apx-checkov-recurso} e~\ref{tab:apx-checkov-regra} do Apêndice~\ref{apx:seguranca}). Como o número de verificações aplicáveis varia por recurso, o agregado acima pesa mais os \textit{templates} com mais verificações, e o S3, que concentra a maioria das reprovações, puxa a média geral para baixo. Calculando a taxa de aprovação de cada \textit{template} individualmente e depois tirando a média entre eles, o resultado muda pouco (87,4\% no manual, 86,8\% sem contexto e 89,9\% com contexto, mediana de 93,3\%, 87,5\% e 87,5\%, respectivamente, com detalhamento no Apêndice~\ref{apx:seguranca}). Nos três cenários, todos os \textit{templates} de IAM aprovam a totalidade das verificações aplicáveis, e praticamente todos os de Security Group reprovam a mesma verificação, que exige que o grupo esteja associado a outro recurso da infraestrutura e que nenhum deles, avaliado isoladamente, atende. A diferença está concentrada no S3, com 75,8\% de aprovação no manual, 72,6\% sem contexto e 81,7\% com contexto, em controles que não constam dos requisitos de nenhum dos três grupos, como ciclo de vida dos objetos, notificação de eventos, replicação entre regiões e registro de acesso.
+
+Em síntese, o contexto organizacional faz mais diferença no risco de exposição de rede do Security Group do que na conformidade ampla medida pelo Checkov, na qual as diferenças entre os três cenários (89,3\% a 89,9\%) são numericamente pequenas na amostra observada.

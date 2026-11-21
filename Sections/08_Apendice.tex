@@ -1,0 +1,170 @@
+\section{Validação Sintática e Completude por Recurso}
+\label{apx:validacao}
+
+A Tabela~\ref{tab:apx-validate} apresenta o resultado de cada etapa do \texttt{terraform-validate.yml} por cenário e recurso. Como na Tabela~\ref{tab:terraform-validate}, a coluna \texttt{validate} considera apenas os \textit{templates} aprovados no \texttt{init}.
+
+\begin{table}[H]
+\centering
+\caption{Resultado do \texttt{terraform-validate} por cenário, recurso e etapa. Fonte: elaborado pelo autor.}
+\label{tab:apx-validate}
+\small
+\begin{tabular}{l|l|c|c|c|c}
+\hline
+\textbf{Cenário} & \textbf{Recurso} & \textbf{fmt} & \textbf{init} & \textbf{validate} & \textbf{Geral} \\
+\hline
+Manual & Amazon S3 & 20/20 & 20/20 & 20/20 & 20/20 (100\%) \\
+ & AWS IAM & 19/20 & 20/20 & 20/20 & 19/20 (95,0\%) \\
+ & Security Group & 17/20 & 20/20 & 20/20 & 17/20 (85,0\%) \\
+\hline
+IA sem contexto & Amazon S3 & 28/30 & 30/30 & 23/30 & 21/30 (70,0\%) \\
+ & AWS IAM & 16/30 & 30/30 & 27/30 & 14/30 (46,7\%) \\
+ & Security Group & 25/30 & 29/30 & 26/29 & 21/30 (70,0\%) \\
+\hline
+IA com contexto & Amazon S3 & 29/30 & 29/30 & 29/29 & 28/30 (93,3\%) \\
+ & AWS IAM & 24/30 & 30/30 & 30/30 & 24/30 (80,0\%) \\
+ & Security Group & 29/30 & 29/30 & 29/29 & 28/30 (93,3\%) \\
+\hline
+\end{tabular}
+\end{table}
+
+No cenário manual, as quatro reprovações em \texttt{fmt} ocorrem três no Security Group e uma no IAM, por divergências de formatação. O IAM concentra a maior parte das reprovações em \texttt{fmt} nos dois cenários de IA (14 de 21 sem contexto e 6 de 8 com contexto). As reprovações em \texttt{validate} do cenário sem contexto ocorrem no S3 (7), no IAM (3) e no Security Group (3). As falhas de \texttt{init} decorrem de recurso experimental declarado no bloco \texttt{terraform} (1 sem contexto) e de declaração duplicada de \texttt{required\_providers} (2 com contexto).
+
+Quanto à completude, os quatro arquivos Terraform (\texttt{main.tf}, \texttt{variables.tf}, \texttt{outputs.tf} e \texttt{versions.tf}) estavam presentes nos 180 \textit{templates} automatizados e nos 60 \textit{templates} manuais (100\%). O \texttt{README.md} esteve presente em 30 de 30 \textit{templates} de cada recurso nos dois cenários de IA e em 42 dos 60 \textit{templates} manuais, de 14 dos 20 participantes.
+
+\section{Causas das Falhas na Execução Funcional}
+\label{apx:localstack}
+
+A Tabela~\ref{tab:localstack-causas} classifica as 25 falhas da execução funcional com LocalStack pela mensagem de erro registrada nos \textit{logs} de cada etapa.
+
+\begin{table}[H]
+\centering
+\caption{Causas das falhas na execução funcional com LocalStack, por cenário. Fonte: elaborado pelo autor.}
+\label{tab:localstack-causas}
+\small
+\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}X|c|c|c}
+\hline
+\textbf{Causa (mensagem do Terraform ou do \textit{workflow})} & \textbf{Manual} & \textbf{IA s/ contexto} & \textbf{IA c/ contexto} \\
+\hline
+Operação não suportada pelo ambiente de execução (S3 Control ou KMS) & 7 & 0 & 0 \\
+Conflito de nome com outro \textit{template} executado na mesma rodada & 1 & 0 & 0 \\
+Variável obrigatória sem valor no ambiente de execução & 1 & 0 & 0 \\
+Descrição de regra do Security Group com acentos, rejeitada pelo \textit{provider} & 2 & 0 & 0 \\
+\textit{Output} em formato ou nome não reconhecido pela rotina de verificação & 2 & 0 & 0 \\
+Indexação de conjunto em \textit{output} do S3 & 0 & 4 & 0 \\
+\texttt{for\_each} dinâmico inválido na \textit{trust policy} do IAM & 0 & 3 & 0 \\
+Recurso experimental declarado no bloco \texttt{terraform} & 0 & 1 & 1 \\
+Declaração duplicada de \texttt{required\_providers} & 0 & 0 & 1 \\
+Valor do ambiente de execução rejeitado pela \texttt{validation} do \textit{template} & 0 & 0 & 2 \\
+\hline
+\textbf{Total} & \textbf{13 de 60} & \textbf{8 de 90} & \textbf{4 de 90} \\
+\hline
+\end{tabularx}
+\end{table}
+
+A Tabela~\ref{tab:localstack-atribuicao} classifica as 13 falhas manuais entre as atribuíveis ao ambiente de execução (nomes de variável e \textit{output} fora do repertório reconhecido, e operações não suportadas pelo emulador) e as atribuíveis ao conteúdo do \textit{template} (um erro que também ocorreria em uma conta AWS real).
+
+\begin{table}[H]
+\centering
+\caption{Falhas manuais no LocalStack, por origem atribuída. Fonte: elaborado pelo autor.}
+\label{tab:localstack-atribuicao}
+\small
+\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}X|c|c}
+\hline
+\textbf{Origem} & \textbf{Falhas} & \textbf{\%} \\
+\hline
+Ambiente de execução (S3 Control/KMS, conflito de nome, variável e \textit{output} fora do repertório) & 11 & 84,6\% \\
+\hline
+Conteúdo do \textit{template} (descrição de regra com acentuação, rejeitada pela própria AWS) & 2 & 15,4\% \\
+\hline
+Total & 13 & 100\% \\
+\hline
+\end{tabularx}
+\end{table}
+
+No cenário manual, as oito reprovações de S3 concentram-se em uma única causa. O \textit{provider} AWS invoca, ao criar o \textit{bucket} ou a chave de criptografia, uma operação de listagem de \textit{tags} via S3 Control ou de criação de chave via KMS, serviços que o ambiente de execução local não implementa. Em um dos casos, o \textit{bucket} de um \textit{template} anterior, executado na mesma rodada, permanece no ambiente e provoca um conflito de nome em outro \textit{template} que declara o mesmo valor fixo. As demais cinco reprovações, no IAM e no Security Group, têm três causas distintas entre si: uma variável obrigatória sem valor, duas descrições de regra em português com acentuação e dois casos em que o recurso é criado corretamente, mas a rotina de verificação não localiza seu identificador, por o \textit{output} estar em um nome fora do padrão reconhecido ou em um mapa indexado por múltiplos Security Groups do mesmo \textit{template}.
+
+No cenário sem contexto, as falhas exclusivas desse cenário (indexação de conjunto no S3 e \texttt{for\_each} inválido no IAM) são erros de construção da linguagem, também detectados pelo \texttt{validate}. No cenário com contexto, as reprovações do Security Group decorrem de dois \textit{templates} que transformaram o padrão de nomenclatura organizacional em regra de \texttt{validation} da variável de nome e, por isso, rejeitaram o valor fornecido pelo ambiente de execução; a reprovação do S3 decorre de uma declaração duplicada de \texttt{required\_providers}.
+
+\section{Detalhes da Análise de Segurança}
+\label{apx:seguranca}
+
+A Tabela~\ref{tab:apx-checkov-recurso} apresenta o número de verificações do Checkov e a taxa de aprovação por recurso e cenário, a Tabela~\ref{tab:apx-checkov-regra} apresenta, para cada verificação reprovada, o número de \textit{templates} com pelo menos uma reprovação, e a Tabela~\ref{tab:apx-checkov-template} apresenta a taxa de aprovação calculada por \textit{template} individual, em vez do agregado de verificações, como alternativa que não pesa mais os recursos com mais verificações aplicáveis.
+
+\begin{table}[H]
+\centering
+\caption{Taxa de aprovação do Checkov calculada por \textit{template} individual, por cenário. Fonte: elaborado pelo autor.}
+\label{tab:apx-checkov-template}
+\small
+\begin{tabular}{l|c|c|c|c}
+\hline
+\textbf{Cenário} & \textbf{Média} & \textbf{Mediana} & \textbf{Mínimo} & \textbf{Máximo} \\
+\hline
+Manual & 87,4\% & 93,3\% & 41,7\% & 100\% \\
+IA sem contexto & 86,8\% & 87,5\% & 66,7\% & 100\% \\
+IA com contexto & 89,9\% & 87,5\% & 70,6\% & 100\% \\
+\hline
+\end{tabular}
+\end{table}
+
+\begin{table}[H]
+\centering
+\caption{Verificações do Checkov e taxa de aprovação por recurso e cenário. Fonte: elaborado pelo autor.}
+\label{tab:apx-checkov-recurso}
+\small
+\begin{tabular}{l|c|c|c}
+\hline
+\textbf{Recurso} & \textbf{Manual} & \textbf{IA sem contexto} & \textbf{IA com contexto} \\
+\hline
+Amazon S3 & 317/418 (75,8\%) & 357/492 (72,6\%) & 668/818 (81,7\%) \\
+AWS IAM & 471/471 (100\%) & 836/836 (100\%) & 705/705 (100\%) \\
+Security Group & 269/294 (91,5\%) & 227/257 (88,3\%) & 238/268 (88,8\%) \\
+\hline
+Total & 1.057/1.183 (89,3\%) & 1.420/1.585 (89,6\%) & 1.611/1.791 (89,9\%) \\
+\hline
+\end{tabular}
+\end{table}
+
+\begin{table}[H]
+\centering
+\caption{\textit{Templates} com pelo menos uma reprovação em cada verificação do Checkov, por cenário. Fonte: elaborado pelo autor.}
+\label{tab:apx-checkov-regra}
+\small
+\begin{tabularx}{\textwidth}{l|>{\raggedright\arraybackslash}X|c|c|c}
+\hline
+\textbf{Verificação} & \textbf{Descrição} & \textbf{Manual} & \textbf{IA s/ ctx.} & \textbf{IA c/ ctx.} \\
+\hline
+\texttt{CKV2\_AWS\_61} & S3 sem configuração de ciclo de vida & 20/20 & 30/30 & 30/30 \\
+\texttt{CKV2\_AWS\_62} & S3 sem notificação de eventos & 20/20 & 30/30 & 30/30 \\
+\texttt{CKV\_AWS\_144} & S3 sem replicação entre regiões & 20/20 & 30/30 & 30/30 \\
+\texttt{CKV\_AWS\_18} & S3 sem \textit{log} de acesso & 19/20 & 30/30 & 30/30 \\
+\texttt{CKV\_AWS\_145} & S3 sem criptografia KMS por padrão & 15/20 & 15/30 & 30/30 \\
+\texttt{CKV2\_AWS\_64} & Chave KMS sem política definida & 2/20 & 0/30 & 0/30 \\
+\texttt{CKV2\_AWS\_6} & S3 sem bloqueio de acesso público & 1/20 & 0/30 & 0/30 \\
+\texttt{CKV\_AWS\_21} & S3 sem versionamento & 1/20 & 0/30 & 0/30 \\
+\hline
+\texttt{CKV2\_AWS\_5} & Security Group não associado a outro recurso & 20/20 & 30/30 & 30/30 \\
+\texttt{CKV\_AWS\_23} & Security Group com regra sem descrição & 1/20 & 0/30 & 0/30 \\
+\texttt{CKV\_AWS\_382} & Security Group com saída irrestrita & 2/20 & 0/30 & 0/30 \\
+\hline
+\end{tabularx}
+\end{table}
+
+A Tabela~\ref{tab:apx-trivy-regra} apresenta, para cada regra do Trivy com achados, o número de \textit{templates} afetados e o total de ocorrências.
+
+\begin{table}[H]
+\centering
+\caption{Achados do Trivy por regra e cenário: \textit{templates} afetados (ocorrências). Fonte: elaborado pelo autor.}
+\label{tab:apx-trivy-regra}
+\small
+\begin{tabularx}{\textwidth}{l|>{\raggedright\arraybackslash}X|c|c|c|c}
+\hline
+\textbf{Regra} & \textbf{Descrição} & \textbf{Sev.} & \textbf{Manual} & \textbf{IA s/ ctx.} & \textbf{IA c/ ctx.} \\
+\hline
+\texttt{AWS-0089} & S3 sem \textit{log} de acesso & Baixa & 20 (20) & 30 (30) & 30 (30) \\
+\texttt{AWS-0090} & S3 sem versionamento & Média & 1 (1) & 0 (0) & 0 (0) \\
+\texttt{AWS-0132} & S3 sem chave gerenciada pelo cliente & Alta & 17 (17) & 0 (0) & 21 (21) \\
+\texttt{AWS-0104} & Saída irrestrita no Security Group & Crítica & 9 (10) & 28 (28) & 8 (8) \\
+\texttt{AWS-0099} & Security Group sem descrição & Baixa & 1 (1) & 0 (0) & 1 (1) \\
+\hline
+\end{tabularx}
+\end{table}
